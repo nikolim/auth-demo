@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiwi Authentication Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .token-display {
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .error {
+            color: red;
+            background: #ffe6e6;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            color: green;
+            background: #e6ffe6;
+            padding: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Kiwi Authentication Demo</h1>
+    <button id="loginBtn" style="margin-bottom: 20px;">Login</button>
+    
+    <div class="container">
+        <h2>Token Information</h2>
+        <p><strong>Access Token:</strong></p>
+        <div id="accessToken" class="token-display">No token found</div>
+        
+        <p><strong>ID Token:</strong></p>
+        <div id="idToken" class="token-display">No token found</div>
+        
+        <p><strong>Refresh Token:</strong></p>
+        <div id="refreshToken" class="token-display">No token found</div>
+    </div>
+
+    <div class="container">
+        <h2>API Gateway Test</h2>
+        <input type="text" id="apiUrl" placeholder="Enter API Gateway URL" style="width: 100%; padding: 10px; margin: 10px 0;">
+        <button onclick="testApiGateway()">Test API Gateway</button>
+        <div id="apiResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>Actions</h2>
+        <button onclick="clearTokens()">Clear Tokens</button>
+        <button onclick="copyAccessToken()">Copy Access Token</button>
+    </div>
+
+    <script>
+        // Function to get URL parameters
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Function to get hash parameters (for implicit flow)
+        function getHashParameter(name) {
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            return hashParams.get(name);
+        }
+
+        // Function to extract tokens from URL
+        function extractTokens() {
+            // Try to get tokens from URL parameters first
+            let accessToken = getUrlParameter('access_token');
+            let idToken = getUrlParameter('id_token');
+            let refreshToken = getUrlParameter('refresh_token');
+
+            // If not found in URL params, try hash parameters
+            if (!accessToken) {
+                accessToken = getHashParameter('access_token');
+                idToken = getHashParameter('id_token');
+                refreshToken = getHashParameter('refresh_token');
+            }
+
+            return { accessToken, idToken, refreshToken };
+        }
+
+        // Function to display tokens
+        function displayTokens() {
+            const tokens = extractTokens();
+            
+            document.getElementById('accessToken').textContent = tokens.accessToken || 'No token found';
+            document.getElementById('idToken').textContent = tokens.idToken || 'No token found';
+            document.getElementById('refreshToken').textContent = tokens.refreshToken || 'No token found';
+        }
+
+        // Function to test API Gateway
+        async function testApiGateway() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const accessToken = extractTokens().accessToken;
+            const resultDiv = document.getElementById('apiResult');
+
+            if (!apiUrl) {
+                resultDiv.innerHTML = '<div class="error">Please enter an API Gateway URL</div>';
+                return;
+            }
+
+            if (!accessToken) {
+                resultDiv.innerHTML = '<div class="error">No access token found</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.text();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>Success!</strong> Status: ${response.status}
+                            <pre>${data}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>Error!</strong> Status: ${response.status}
+                            <pre>${data}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>Network Error:</strong>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Function to clear tokens
+        function clearTokens() {
+            document.getElementById('accessToken').textContent = 'No token found';
+            document.getElementById('idToken').textContent = 'No token found';
+            document.getElementById('refreshToken').textContent = 'No token found';
+            document.getElementById('apiResult').innerHTML = '';
+        }
+
+        // Function to copy access token
+        function copyAccessToken() {
+            const accessToken = extractTokens().accessToken;
+            if (accessToken) {
+                navigator.clipboard.writeText(accessToken).then(() => {
+                    alert('Access token copied to clipboard!');
+                }).catch(() => {
+                    alert('Failed to copy token');
+                });
+            } else {
+                alert('No access token to copy');
+            }
+        }
+
+        // Initialize the page
+        window.onload = function() {
+            displayTokens();
+        };
+
+        document.getElementById('loginBtn').onclick = function() {
+            window.location.href = 'https://eu-west-1ezh4oyoes.auth.eu-west-1.amazoncognito.com/login/continue?client_id=5g8cogvpubk30d8b6mj5tu8nei&redirect_uri=https://example.com&response_type=token&scope=email+openid+phone'
+        };
+    </script>
+</body>
+</html> 
