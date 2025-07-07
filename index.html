@@ -70,7 +70,7 @@
 
     <div class="container">
         <h2>API Gateway Test</h2>
-        <input type="text" id="apiUrl" placeholder="Enter API Gateway URL" value="https://awcl2itld5.execute-api.eu-west-1.amazonaws.com/TEST/graphql-endpoint" style="width: 100%; padding: 10px; margin: 10px 0;">
+        <input type="text" id="apiUrl" placeholder="Enter API Gateway URL" style="width: 100%; padding: 10px; margin: 10px 0;">
         <button onclick="testApiGateway()">Test API Gateway</button>
         <div id="apiResult"></div>
     </div>
@@ -123,7 +123,7 @@
         // Function to test API Gateway
         async function testApiGateway() {
             const apiUrl = document.getElementById('apiUrl').value;
-            const accessToken = extractTokens().accessToken;
+            const idToken = extractTokens().idToken;
             const resultDiv = document.getElementById('apiResult');
 
             if (!apiUrl) {
@@ -131,8 +131,8 @@
                 return;
             }
 
-            if (!accessToken) {
-                resultDiv.innerHTML = '<div class="error">No access token found</div>';
+            if (!idToken) {
+                resultDiv.innerHTML = '<div class="error">No ID token found</div>';
                 return;
             }
 
@@ -140,7 +140,7 @@
                 const response = await fetch(apiUrl, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`,
+                        'Authorization': `Bearer ${idToken}`,
                         'Content-Type': 'application/json'
                     }
                 });
@@ -200,7 +200,7 @@
         };
 
         document.getElementById('loginBtn').onclick = function() {
-            window.location.href = 'https://eu-west-1ezh4oyoes.auth.eu-west-1.amazoncognito.com/login?client_id=5g8cogvpubk30d8b6mj5tu8nei&response_type=token&scope=email+openid&redirect_uri=https%3A%2F%2Fnikolim.github.io%2Fauth-demo%2F';
+            window.location.href = 'https://eu-west-1ezh4oyoes.auth.eu-west-1.amazoncognito.com/login/continue?client_id=5g8cogvpubk30d8b6mj5tu8nei&redirect_uri=https://example.com&response_type=token&scope=email+openid+phone'
         };
     </script>
 </body>
